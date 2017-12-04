@@ -13,6 +13,8 @@ class Config(object):
     # Mac:
     # cat /dev/urandom | env LC-CTYPE=C tr -cd 'a-z0-9' | head -c 32
     SECRET_KEY = os.environ.get('SECRET_KEY', 'hard to guess string')
+    RECAPTCHA_PUBLIC_KEY=""
+    RECAPTCHA_PRIVATE_KEY=""
     # pass
 
     @staticmethod

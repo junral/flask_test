@@ -9,8 +9,6 @@ from flask_migrate import Migrate, MigrateCommand
 from webapp import create_app
 from webapp.models import db, User, Post, Tag, Comment
 
-# from main import app, db, User, Post, Comment, Tag, tags
-
 env = os.environ.get('WEBAPP', 'default')
 app = create_app(env)
 migrate = Migrate(app, db)

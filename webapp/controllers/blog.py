@@ -2,15 +2,19 @@
 # encoding: utf-8
 
 # from os import path
-import datetime
+# import datetime
 
 from flask import Blueprint
-from flask import render_template, g, session, abort
+from flask import render_template, redirect, url_for, flash, abort
+from flask import g, session
 # from flask.views import View, MethodView
 from sqlalchemy import func
+from flask_login import login_required
+from flask_principal import Permission, UserNeed
 
 from ..models import db, Post, Tag, Comment, User, tags
-from ..forms import CommentForm
+from ..forms import CommentForm, PostFrom
+from ..extensions import poster_permission, admin_permission
 
 blog_blueprint = Blueprint(
     'blog',
@@ -80,16 +84,15 @@ def user(username):
 
 
 @blog_blueprint.route('/post/<int:post_id>', methods=['GET', 'POST'])
+@login_required
 def post(post_id):
     form = CommentForm()
+
     if form.validate_on_submit():
-        new_comment = Comment()
-        new_comment.name = form.name.data
-        new_comment.text = form.text.data
-        new_comment.pyodbc = post_id
-        new_comment.data = datetime.datetime.now()
-        db.session.add(new_comment)
-        db.session.commit()
+        name = form.name.data
+        text =  form.text.data
+        Comment.create_comment(name, text, post_id)
+
     post = Post.query.get_or_404(post_id)
     tags = post.tags
     comments = post.comments.order_by(Comment.date.desc()).all()
@@ -106,21 +109,57 @@ def post(post_id):
     )
 
 
+@blog_blueprint.route('/new', methods=['GET', 'POST'])
+@login_required
+def new_post():
+    if not g.current_user:
+        return redirect(url_for('main.login'))
+
+    form = PostFrom()
+
+    if form.validate_on_submit():
+        title = form.title.data
+        text = form.text.data
+        Post.create_post(title, text)
+
+    return render_template('blog/new.html', form=form)
+
+
+@blog_blueprint.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+# 创建只希望作者能访问的页面
+@poster_permission.required(http_exception=403)
+def edit_post(id):
+    #  if not g.current_user:
+        #  return redirect(url_for('main.login'))
+
+    post = Post.query.get_or_404(id)
+    permission = Permission(UserNeed(post.user.id))
+
+    # 希望管理员可以修改任何文章
+    if permission.can() or admin_permission.can():
+        form = PostFrom()
+
+        if form.validate_on_submit():
+            title = form.title.data
+            text = form.text.data
+            post.change(title, text)
+
+            return redirect(url_for('.post', post_id=post.id))
+
+        form.text.data = post.text
+        return render_template('blog/edit.html', form=form, post=post)
+
+    abort(403)
+
+
 @blog_blueprint.before_request
 def before_request():
-    if 'user_id' in session:
-        g.user = User.query.get(session['user_id'])
+    """ 在所有请求处理之前运行 """
+    #  if 'user_id' in session:
+        #  g.user = User.query.get(session['user_id'])
 
-
-@blog_blueprint.route('/restricted')
-def admin():
-    if g.user is None:
-        abort(403)
-
-    return render_template('admin.html')
-
-
-@blog_blueprint.errorhandler(404)
-def page_not_found(error):
-    """ 处理 404 错误 """
-    return render_template('page_not_found.html'), 404
+    if 'username' in session:
+        g.user = User.query.get(session['usename']).one()
+    else:
+        g.crrent_user = None
