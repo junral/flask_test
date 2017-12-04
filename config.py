@@ -12,7 +12,7 @@ class Config(object):
     # cat /dev/urandom | tr -cd 'a-z0-9' | head -c 32
     # Mac:
     # cat /dev/urandom | env LC-CTYPE=C tr -cd 'a-z0-9' | head -c 32
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'hard to guess string')
     # pass
 
 

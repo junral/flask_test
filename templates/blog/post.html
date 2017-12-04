@@ -5,7 +5,7 @@
 {% block body %}
 <div class="col-lg-12">
     <h3>New Comment:</h3>
-    <form method="POST" action="{{ url_for('post', post_id=post.id) }}">
+    <form method="POST" action="{{ url_for('.post', post_id=post.id) }}">
         {% block comment_form %}
         {{ form.hidden_tag() }}
         <div class="form-group">

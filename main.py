@@ -3,9 +3,13 @@
 
 import datetime
 
-from flask import Flask, render_template
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
+from flask import Flask
+from flask import Blueprint
+from flask import redirect, url_for
+from flask import  render_template, g, session, abort
+from flask.views import View, MethodView
 from sqlalchemy import func
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SubmitField
@@ -19,7 +23,9 @@ bootstrap = Bootstrap(app)
 db = SQLAlchemy(app)
 
 
+# 表单 forms
 class CommentForm(FlaskForm):
+    """ 评论的表单 """
     name = StringField('Name', validators=[Required(), Length(max=255)])
     text = TextAreaField('Comment', validators=[Required()])
     submit = SubmitField('Add Comment')
@@ -33,6 +39,7 @@ def custom_email(form, field):
         raise wtforms.ValidationError('Field must be a valid email address.')
 
 
+# 模型 models
 class User(db.Model):
     """ 用户表 """
 
@@ -86,6 +93,27 @@ class Post(db.Model):
     def __repr__(self):
         return r"<Post'{}'>".format(self.title)
 
+    @staticmethod
+    def generate_fake_posts(num=100):
+        import random
+        import datetime
+        user = User.query.get(1)
+        tag_one = Tag('Python')
+        tag_two = Tag('Flask')
+        tag_three = Tag('SQLAlchemy')
+        tag_four = Tag('Jinja')
+        tag_list = [tag_one, tag_two, tag_three, tag_four]
+
+        s = "Example text"
+
+        for i in range(num):
+            new_post = Post("Post " + str(i))
+            new_post.user = user
+            new_post.publish_date = datetime.datetime.now()
+            new_post.text = s
+            new_post.tags = random.sample(tag_list, random.randint(1, 3))
+            db.session.commit()
+
 
 class Comment(db.Model):
     """ 评论表 """
@@ -129,8 +157,17 @@ def sidebar_data():
     return recent, top_tags
 
 
-@app.route('/')
-@app.route('/<int:page>')
+blog_blueprint = Blueprint(
+    'blog',
+    __name__,
+    template_folder='templates/blog',
+    # static_folder='static/blog',
+    url_prefix='/blog'
+)
+
+
+@blog_blueprint.route('/')
+@blog_blueprint.route('/<int:page>')
 def home(page=1):
     # return '<h1>Hello World!</h1>'
     posts = Post.query.order_by(
@@ -163,7 +200,7 @@ def home(page=1):
     # )
 
 
-@app.route('/tag/<string:tag_name>')
+@blog_blueprint.route('/tag/<string:tag_name>')
 def tag(tag_name):
     tag = Tag.query.filter_by(title=tag_name).first_or_404()
     posts = tag.posts.order_by(Post.publish_date.desc()).all()
@@ -178,7 +215,7 @@ def tag(tag_name):
     )
 
 
-@app.route('/user/<string:username>')
+@blog_blueprint.route('/user/<string:username>')
 def user(username):
     user = User.query.filter_by(username=username).first_or_404()
     posts = user.posts.order_by(Post.publish_date.desc()).all()
@@ -193,7 +230,7 @@ def user(username):
     )
 
 
-@app.route('/post/<int:post_id>', methods=['GET', 'POST'])
+@blog_blueprint.route('/post/<int:post_id>', methods=['GET', 'POST'])
 def post(post_id):
     form = CommentForm()
     if form.validate_on_submit():
@@ -220,25 +257,32 @@ def post(post_id):
     )
 
 
-def generate_fake_posts(num=100):
-    import random
-    import datetime
-    user = User.query.get(1)
-    tag_one = Tag('Python')
-    tag_two = Tag('Flask')
-    tag_three = Tag('SQLAlchemy')
-    tag_four = Tag('Jinja')
-    tag_list = [tag_one, tag_two, tag_three, tag_four]
+@blog_blueprint.before_request
+def before_request():
+    if 'user_id' in session:
+        g.user = User.query.get(session['user_id'])
 
-    s = "Example text"
 
-    for i in range(num):
-        new_post = Post("Post " + str(i))
-        new_post.user = user
-        new_post.publish_date = datetime.datetime.now()
-        new_post.text = s
-        new_post.tags = random.sample(tag_list, random.randint(1, 3))
-        db.session.commit()
+@blog_blueprint.route('/restricted')
+def admin():
+    if g.user is None:
+        abort(403)
+
+    return render_template('admin.html')
+
+
+@blog_blueprint.errorhandler(404)
+def page_not_found(error):
+    """ 处理 404 错误 """
+    return render_template('page_not_found.html'), 404
+
+
+@app.route('/')
+def index():
+    return redirect(url_for('blog.home'))
+
+
+app.register_blueprint(blog_blueprint)
 
 
 if __name__ == '__main__':
