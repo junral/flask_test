@@ -1,15 +1,36 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import datetime
+
 from flask import Flask, render_template
+from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
+from flask_wtf import FlaskForm
+from wtforms import StringField, TextAreaField, SubmitField
+from wtforms.validators import Required, Length
 
 from config import DevConfig
 
 app = Flask(__name__)
 app.config.from_object(DevConfig)
+bootstrap = Bootstrap(app)
 db = SQLAlchemy(app)
+
+
+class CommentForm(FlaskForm):
+    name = StringField('Name', validators=[Required(), Length(max=255)])
+    text = TextAreaField('Comment', validators=[Required()])
+    submit = SubmitField('Add Comment')
+
+
+def custom_email(form, field):
+    """ 自定义表单邮箱验证 """
+    import re
+    import wtforms
+    if not re.match(r'[^@]+@[^@]+\.[^@]+', field.data):
+        raise wtforms.ValidationError('Field must be a valid email address.')
 
 
 class User(db.Model):
@@ -114,7 +135,7 @@ def home(page=1):
     # return '<h1>Hello World!</h1>'
     posts = Post.query.order_by(
         Post.publish_date.desc()
-    ).pagination(page, 10)
+    )  # .pagination(page, 10)
     recent, top_tags = sidebar_data()
 
     return render_template(
@@ -123,6 +144,101 @@ def home(page=1):
         recent=recent,
         top_tags=top_tags
     )
+
+
+# @app.route('/post/<int:post_id>')
+# def post(post_id):
+# post = Post.query.get_or_404(post_id)
+# tags = post.tags
+# comments = post.comments.order_by(Comment.date.desc()).all()
+# recent, top_tags = sidebar_data()
+
+    # return render_template(
+    # 'post.html',
+    # post=post,
+    # tags=tags,
+    # comments=comments,
+    # recent=recent,
+    # top_tags=top_tags
+    # )
+
+
+@app.route('/tag/<string:tag_name>')
+def tag(tag_name):
+    tag = Tag.query.filter_by(title=tag_name).first_or_404()
+    posts = tag.posts.order_by(Post.publish_date.desc()).all()
+    recent, top_tags = sidebar_data()
+
+    return render_template(
+        'tag.html',
+        tag=tag,
+        posts=posts,
+        recent=recent,
+        top_tags=top_tags
+    )
+
+
+@app.route('/user/<string:username>')
+def user(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    posts = user.posts.order_by(Post.publish_date.desc()).all()
+    recent, top_tags = sidebar_data()
+
+    return render_template(
+        'user.html',
+        user=user,
+        posts=posts,
+        recent=recent,
+        top_tags=top_tags
+    )
+
+
+@app.route('/post/<int:post_id>', methods=['GET', 'POST'])
+def post(post_id):
+    form = CommentForm()
+    if form.validate_on_submit():
+        new_comment = Comment()
+        new_comment.name = form.name.data
+        new_comment.text = form.text.data
+        new_comment.pyodbc = post_id
+        new_comment.data = datetime.datetime.now()
+        db.session.add(new_comment)
+        db.session.commit()
+    post = Post.query.get_or_404(post_id)
+    tags = post.tags
+    comments = post.comments.order_by(Comment.date.desc()).all()
+    recent, top_tags = sidebar_data()
+
+    return render_template(
+        'post.html',
+        post=post,
+        tags=tags,
+        comments=comments,
+        recent=recent,
+        top_tags=top_tags,
+        form=form
+    )
+
+
+def generate_fake_posts(num=100):
+    import random
+    import datetime
+    user = User.query.get(1)
+    tag_one = Tag('Python')
+    tag_two = Tag('Flask')
+    tag_three = Tag('SQLAlchemy')
+    tag_four = Tag('Jinja')
+    tag_list = [tag_one, tag_two, tag_three, tag_four]
+
+    s = "Example text"
+
+    for i in range(num):
+        new_post = Post("Post " + str(i))
+        new_post.user = user
+        new_post.publish_date = datetime.datetime.now()
+        new_post.text = s
+        new_post.tags = random.sample(tag_list, random.randint(1, 3))
+        db.session.commit()
 
 
 if __name__ == '__main__':

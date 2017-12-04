@@ -3,9 +3,17 @@
 
 import os
 
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 
 class Config(object):
-    pass
+    # generate 32 SECRET_KEY from random choices('a-z0-9') command:
+    # Bash:
+    # cat /dev/urandom | tr -cd 'a-z0-9' | head -c 32
+    # Mac:
+    # cat /dev/urandom | env LC-CTYPE=C tr -cd 'a-z0-9' | head -c 32
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard to guess string'
+    # pass
 
 
 class ProdConfig(object):
@@ -21,13 +29,12 @@ class ProdConfig(object):
     pass
 
 
-class DevConfig(object):
+class DevConfig(Config):
     """ 开发环境配置 """
     DEBUG = True
     # SQLite
-    # BASE_URL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # DB_URI = 'sqlite:///' + os.path.join(BASE_URL, 'database.db')
-    DB_URI = 'sqlite:///database.db'
+    DB_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'database.db')
+    # DB_URI = 'sqlite:///database.db'
     SQLALCHEMY_DATABASE_URI = DB_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     # 查看数据库 SQL 查询语句设置
