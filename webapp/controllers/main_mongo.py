@@ -8,39 +8,45 @@ from flask import request, session, g, current_app
 from flask_login import login_user, logout_user, login_required
 from flask_principal import Identity, AnonymousIdentity, identity_changed
 
-from ..models import User
-from ..forms import LoginForm, RegisterForm, OpenIDForm
+from ..models_mongo import User
+from ..forms_mongo import LoginForm, RegisterForm, OpenIDForm
 from ..extensions import oid
 # from ..extensions import facebook, twitter
 
 
-main_blueprint = Blueprint(
-    'main',
-    __name__
-    # template_folder='../templates/main'
+main_mongo_blueprint = Blueprint(
+    'main_mongo',
+    __name__,
+    url_prefix='/mongo'
 )
 
 
-@main_blueprint.route('/restricted')
+@main_mongo_blueprint.route('/restricted')
 def admin():
     if g.user is None:
         abort(403)
 
-    return render_template('admin.html')
+    return render_template(
+        'admin.html',
+        mongo=True
+    )
 
 
-@main_blueprint.errorhandler(404)
+@main_mongo_blueprint.errorhandler(404)
 def page_not_found(error):
     """ 处理 404 错误 """
     return render_template('page_not_found.html'), 404
 
 
-@main_blueprint.route('/')
+@main_mongo_blueprint.route('/')
 def index():
-    return redirect(url_for('blog.home'))
+    return redirect(url_for(
+        'blog_mongo.home',
+        mongo=True
+    ))
 
 
-@main_blueprint.route('/login', methods=['GET', 'POST'])
+@main_mongo_blueprint.route('/login', methods=['GET', 'POST'])
 # 告诉 Flask-OpenID 接受从中继方返回的认证信息。
 @oid.loginhandler
 def login():
@@ -55,11 +61,7 @@ def login():
         )
 
     if form.validate_on_submit():
-        # Add the user's name to the cookie
-        # session['username'] = form.username.data
-        user = User.query.filter_by(
-            username=form.username.data
-        ).one()
+        user = User.objects(username=form.username.data).one()
         login_user(user, remember=form.remember.data)
 
         identity_changed.send(
@@ -68,16 +70,19 @@ def login():
         )
 
         flash('You have been logged in.', category='success')
-        # return redirect(url_for('blog.home'))
 
     openid_errors = oid.fetch_error()
     if openid_errors:
         flash(openid_errors, category='danger')
 
-    return render_template('login.html', form=form)
+    return render_template(
+        'login_mongo.html',
+        mongo=True,
+        form=form
+    )
 
 
-@main_blueprint.route('/register', methods=['GET', 'POST'])
+@main_mongo_blueprint.route('/register', methods=['GET', 'POST'])
 @oid.loginhandler
 def regester():
     form = RegisterForm()
@@ -91,30 +96,35 @@ def regester():
         )
 
     if form.validate_on_submit():
-        username = form.username.data
-        email = form.email.data
-        password = form.password.data
-        User.create_user(username, email, password)
+        user = User()
+        user.username = form.username.data
+        user.email = form.email.data
+        user.set_password(form.password.data)
+        user.save()
 
         flash(
             'Your user has been created, please login.',
             category='success'
         )
 
-        return redirect(url_for('.login'))
+        return redirect(url_for(
+            '.login',
+            mongo=True))
 
     openid_errors = oid.fetch_error()
     if openid_errors:
         flash(openid_errors, category='danger')
 
-    return render_template('register.html', form=form)
+    return render_template(
+        'register_mongo.html',
+        mongo=True,
+        form=form
+    )
 
 
-@main_blueprint.route('/logout', methods=['GET', 'POST'])
+@main_mongo_blueprint.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
-    # Remove the username from the cookie
-    # session.pop('usename', None)
     logout_user()
     identity_changed.send(
         current_app._get_current_object(),
@@ -123,11 +133,14 @@ def logout():
 
     flash('You have been logged out.', category='success')
 
-    return redirect(url_for('.login'))
+    return redirect(url_for(
+        '.login',
+        mongo=True
+    ))
 
 
 #  # facebook 登录
-#  @main_blueprint.route('/facebook')
+#  @main_mongo_blueprint.route('/facebook')
 #  def facebook_login():
     #  return facebook.authorize(
         #  callback=url_for(
@@ -138,7 +151,7 @@ def logout():
     #  )
 
 
-#  @main_blueprint.route('/facebook/authorized')
+#  @main_mongo_blueprint.route('/facebook/authorized')
 #  @facebook.authorized_hander
 #  def facebook_authorized(resp):
     #  if resp is None:
@@ -163,7 +176,7 @@ def logout():
     #  return redirect(request.args.get('next') or url_for('blog.home'))
 
 
-#  @main_blueprint.round('/twitter-login')
+#  @main_mongo_blueprint.round('/twitter-login')
 #  def twitter_login():
     #  return twitter.authorize(
         #  callback=url_for(
@@ -174,7 +187,7 @@ def logout():
     #  )
 
 
-#  @main_blueprint.route('/twitter-login/authorized')
+#  @main_mongo_blueprint.route('/twitter-login/authorized')
 #  @twitter.authorized_handler
 #  def twitter_authenorize(resp):
     #  if resp is None:

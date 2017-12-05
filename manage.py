@@ -8,6 +8,7 @@ from flask_migrate import Migrate, MigrateCommand
 
 from webapp import create_app
 from webapp.models import db, User, Post, Tag, Comment
+# from webapp.models_mongo import db, User, Post, Tag, Comment
 
 env = os.environ.get('WEBAPP', 'default')
 app = create_app(env)

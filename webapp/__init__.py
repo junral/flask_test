@@ -6,7 +6,7 @@ from flask import Flask
 from flask_login import current_user
 from flask_principal import identity_loaded, UserNeed, RoleNeed
 
-from .extensions import bootstrap, db, bcrypt, oid, login_manager, principals
+from .extensions import bootstrap, db, bcrypt, oid, login_manager, principals, mongo
 from .config import config
 
 
@@ -23,6 +23,7 @@ def create_app(object_name):
     oid.init_app(app)
     login_manager.init_app(app)
     principals.init_app(app)
+    mongo.init_app(app)
 
     @identity_loaded.connect_via(app)
     def on_identity_loaded(sender, identity):
@@ -43,5 +44,11 @@ def create_app(object_name):
 
     from .controllers.main import main_blueprint
     app.register_blueprint(main_blueprint)
+
+    from .controllers.blog_mongo import blog_mongo_blueprint
+    app.register_blueprint(blog_mongo_blueprint)
+
+    from .controllers.main_mongo import main_mongo_blueprint
+    app.register_blueprint(main_mongo_blueprint)
 
     return app

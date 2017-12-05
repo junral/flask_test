@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
+{% block title %}Login{% endblock %}
+
+{% block body %}
+{{ wtf.quick_form(form) }}
+  <!-- <input class="btn btn-primary" type="submit" value="Login"> -->
+{% endblock %}

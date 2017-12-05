@@ -3,11 +3,12 @@
 
 import datetime
 
-from flask_login import AnonymousUserMxin
+from flask_login import AnonymousUserMixin
 
 from .extensions import db, bcrypt
 
 
+# 针对 关系型数据库建立的模型
 # 模型 models
 roles = db.Table(
     'role_users',
@@ -31,8 +32,7 @@ class User(db.Model):
     posts = db.relationship('Post', backref='user', lazy='dynamic')
     roles = db.relationship('Role', secondary=roles, lazy='dynamic')
 
-    def __init__(self, username):
-        self.username = username
+    def __init__(self):
         default = Role.query.filter_by(name='defalut').one()
         self.roles.append(default)
 
@@ -46,7 +46,7 @@ class User(db.Model):
         return bcrypt.check_password_hash(self.password, password)
 
     def is_authenicated(self):
-        if isinstance(self, AnonymousUserMxin):
+        if isinstance(self, AnonymousUserMixin):
             return False
         else:
             return True
@@ -55,7 +55,7 @@ class User(db.Model):
         return True
 
     def is_anonymous(self):
-        if isinstance(self, AnonymousUserMxin):
+        if isinstance(self, AnonymousUserMixin):
             return True
         else:
             return False
@@ -147,7 +147,6 @@ class Post(db.Model):
             user_id(int): the ID of user who the post belongs to.
             *tag: a set of tag.
         """
-
         new_post = Post(title)
         new_post.text = text
         new_post.publish_date = datetime.datetime.now()

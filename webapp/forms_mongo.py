@@ -6,15 +6,15 @@ from wtforms import StringField, TextAreaField, PasswordField, SubmitField, Sele
 from wtforms import BooleanField
 from wtforms.validators import Required, Length, EqualTo, Email, URL
 
-from .models import User
+from .models_mongo import User
 
 
-# 表单 forms
+# 配合 MongoDB 定义的数据模型使用
 class CommentForm(FlaskForm):
     """ 评论的表单 """
     name = StringField('Name', validators=[Required(), Length(max=255)])
     text = TextAreaField('Comment', validators=[Required()])
-    submit = SubmitField('Add Comment')
+    # submit = SubmitField('Add Comment')
 
 
 class LoginForm(FlaskForm):
@@ -22,7 +22,6 @@ class LoginForm(FlaskForm):
     username = StringField('Username', [Required(), Length(max=255)])
     password = PasswordField('Password', [Required()])
     remember = BooleanField('Remember Me')
-    submit = SubmitField('Login')
 
     def validators(self):
         check_validate = super(LoginForm, self).validate()
@@ -32,7 +31,7 @@ class LoginForm(FlaskForm):
             return False
 
         # 检查是否存在该用户
-        user = User.query.filter_by(username=self.username.data).first()
+        user = User.objects(username=self.username.data).first()
         if not user:
             self.username.errors.append('Invalid username or password')
             return False
@@ -65,13 +64,13 @@ class RegisterForm(FlaskForm):
             return False
 
         # 检查用户名是否已存在
-        user = User.query.filter_by(username=self.username.data).first()
+        user = User.objects(username=self.username.data).first()
         if not user:
             self.username.errors.append('User with that name already exists')
             return False
 
         # 检查用户邮箱是否已存在
-        user = User.query.filter_by(email=self.email.data).first()
+        user = User.objects(email=self.email.data).first()
         if not user:
             self.username.errors.append('User with that email already exists')
             return False
@@ -82,13 +81,20 @@ class RegisterForm(FlaskForm):
 class PostForm(FlaskForm):
     """ 文章表单 """
     title = StringField('Title', [Required(), Length(max=255)])
-    text = TextAreaField('Content', [Required()])
-    submit = SubmitField('Submit')
+    type = SelectField('Post Type', choices=[
+        ('blog', 'Blog Post'),
+        ('image', 'Image'),
+        ('video', 'Video'),
+        ('quote', 'Quote')
+    ])
+    text = TextAreaField('Content')
+    image = StringField('Image URL', [URL(), Length(max=255)])
+    video = StringField('Video Code', [URL(), Length(max=255)])
+    author = StringField('Author', [URL(), Length(max=255)])
 
 
 class OpenIDForm(FlaskForm):
     openid = StringField('OpenID URL', [Required(), URL()])
-    submit = SubmitField('Submit')
 
 
 def custom_email(form, field):

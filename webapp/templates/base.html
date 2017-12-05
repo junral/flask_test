@@ -11,6 +11,9 @@
     <div class="container">
       <div class="jumbotron">
         <h1><a href="{{ url_for('blog.home') }}">My Blog</a></h1>
+        {% if not mongo %}
+        <h1><a href="{{ url_for('blog_mongo.home') }}">to MongoDB Version</a></h1>
+        {% endif %}
         <p>Welcome to the blog!</p>
       </div>
       {% with message = get_flashed_messages() %}

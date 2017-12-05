@@ -79,6 +79,14 @@ class DevConfig(Config):
     # 查看数据库 SQL 查询语句设置
     # SQLALCHEMY_ECHO = True
 
+    # 针对 NoSQL 的数据库操作，选用 MongoDB
+    # MongoDB 连接配置
+    MONGODB_SETTINGS = {
+        'db': 'local',
+        'host': 'localhost',
+        'port': 27017
+    }
+
 
 config = {
     'dev': DevConfig,

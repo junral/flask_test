@@ -12,9 +12,9 @@ from sqlalchemy import func
 from flask_login import login_required
 from flask_principal import Permission, UserNeed
 
-from ..models import db, Post, Tag, Comment, User, tags
-from ..forms import CommentForm, PostFrom
-from ..extensions import poster_permission, admin_permission
+from ..models import Post, Tag, Comment, User, tags
+from ..forms import CommentForm, PostForm
+from ..extensions import db, poster_permission, admin_permission
 
 blog_blueprint = Blueprint(
     'blog',
@@ -111,11 +111,12 @@ def post(post_id):
 
 @blog_blueprint.route('/new', methods=['GET', 'POST'])
 @login_required
+@poster_permission.require(http_exception=403)
 def new_post():
     if not g.current_user:
         return redirect(url_for('main.login'))
 
-    form = PostFrom()
+    form = PostForm()
 
     if form.validate_on_submit():
         title = form.title.data
@@ -128,7 +129,7 @@ def new_post():
 @blog_blueprint.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 # 创建只希望作者能访问的页面
-@poster_permission.required(http_exception=403)
+@poster_permission.require(http_exception=403)
 def edit_post(id):
     #  if not g.current_user:
         #  return redirect(url_for('main.login'))
@@ -136,9 +137,9 @@ def edit_post(id):
     post = Post.query.get_or_404(id)
     permission = Permission(UserNeed(post.user.id))
 
-    # 希望管理员可以修改任何文章
+    # 同时希望管理员可以修改任何文章
     if permission.can() or admin_permission.can():
-        form = PostFrom()
+        form = PostForm()
 
         if form.validate_on_submit():
             title = form.title.data
