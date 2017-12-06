@@ -94,7 +94,7 @@ def regester():
         username = form.username.data
         email = form.email.data
         password = form.password.data
-        User.create_user(username, email, password)
+        User.create(username, email, password)
 
         flash(
             'Your user has been created, please login.',
@@ -151,12 +151,13 @@ def logout():
 
     #  me = facebook.get('/me')
     #  user = User.query.filter_by(
-        #  username=me.data['first_name'] + ' ' + me.data['last_name']
     #  ).first()
 
     #  if not user:
-        #  User.create_user(me.data['first_name'] + ' ' + me.data['last_name'])
+        #  User.create(me.data['first_name'] + ' ' + me.data['last_name'])
 
+    #  username=me.data['first_name'] + ' ' + me.data['last_name']
+    #  User.create(usename=username)
     #  # 从这里登录用户
     #  flash('You have been logged in.', category="success")
 
@@ -191,7 +192,7 @@ def logout():
     #  ).first()
 
     #  if not user:
-        #  User.create_user(username=resp['screen_name'])
+        #  User.create(username=resp['screen_name'])
 
     #  # 从这里登录用户
     #  flash('You have been logged in.', category='success')

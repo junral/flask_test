@@ -3,9 +3,15 @@
 
 import datetime
 
+from flask import current_app
 from flask_login import AnonymousUserMixin
+from sqlalchemy.sql.expression import or_
+from werkzeug.security import generate_password_hash, check_password_hash
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from itsdangerous import BadSignature, SignatureExpired
 
-from .extensions import db, bcrypt
+from .extensions import db
+#  from .extensions import bcrypt
 
 
 # 针对 关系型数据库建立的模型
@@ -13,14 +19,50 @@ from .extensions import db, bcrypt
 roles = db.Table(
     'role_users',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('role_id', db.Integer, db.ForeignKey('role.id')),
+    db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
 )
+
+# 针对 Post 表和 Tag 表的多对多关系管理
+tags = db.Table(
+    'tags',
+    db.Column('post_id', db.Integer(), db.ForeignKey('post.id')),
+    db.Column('tag_id', db.Integer(), db.ForeignKey('tag.id'))
+)
+
+
+class Role(db.Model):
+    __tablename__ = 'role'
+
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(255), unique=True)
+    description = db.Column(db.String(255))
+
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return "<Role '{}'>".format(self.name)
+
+    @staticmethod
+    def create_role(name):
+        role = Role.query.filter_by(name=name).first()
+        if role is None:
+            role = Role(name=name)
+            db.session.add(role)
+            db.session.commit()
+
+        return role
+
+    @staticmethod
+    def create_roles(role_list):
+        for r in role_list:
+            Role.insert_role(r)
 
 
 class User(db.Model):
     """ 用户表 """
 
-    # 数据库表明
+    # 数据库表
     __tablename__ = 'user'
 
     # 主键
@@ -29,21 +71,39 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
     # 在 SQLAlchem 中创建虚拟的列，和 Post 表中的外键建立联系
-    posts = db.relationship('Post', backref='user', lazy='dynamic')
-    roles = db.relationship('Role', secondary=roles, lazy='dynamic')
+    posts = db.relationship(
+        'Post',
+        backref='user',
+        lazy='dynamic'
+    )
+    comments = db.relationship(
+        'Comment',
+        backref='user',
+        lazy='dynamic'
+    )
+    roles = db.relationship(
+        'Role',
+        secondary=roles,
+        backref=db.backref('users', lazy='dynamic')
+    )
 
-    def __init__(self):
-        default = Role.query.filter_by(name='defalut').one()
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+        default = Role.query.filter_by(name='default').first()
+        if default is None:
+            default = Role.insert_role('default')
         self.roles.append(default)
 
     def __repr__(self):
         return r"<User '{}'>".format(self.username)
 
     def set_password(self, password):
-        self.password = bcrypt.generate_password_hash(password)
+        # self.password = bcrypt.generate_password_hash(password)
+        self.password = generate_password_hash(password)
 
     def check_password(self, password):
-        return bcrypt.check_password_hash(self.password, password)
+        # return bcrypt.check_password_hash(self.password, password)
+        return check_password_hash(self.password, password)
 
     def is_authenicated(self):
         if isinstance(self, AnonymousUserMixin):
@@ -63,37 +123,79 @@ class User(db.Model):
     def get_id(self):
         return str(self.id)
 
-    @staticmethod
-    def create_user(username='', email='', password=None):
-        if username or email:
-            new_user = User()
-            new_user.username = username
-            new_user.email = email
-            if password:
-                new_user.set_password(password)
+    def generate_reset_token(self, expiration=3600):
+        s = Serializer(
+            current_app.config['SECRET_KEY'],
+            expiration
+        )
+        return s.dumps({'reset': self.id})
 
-            db.session.add(new_user)
+    def reset_password(self, token, password):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except SignatureExpired:
+            return False
+        except BadSignature:
+            return False
+
+        if self.id != data.get('reset'):
+            return False
+
+        self.set_password(password)
+        db.session.add(self)
+        return True
+
+    def generate_auth_token(self, expiration):
+        s = Serializer(
+            current_app.config['SECRET_KEY'],
+            expiration
+        )
+
+        return s.dumps({'id': self.id}).decode('ascii')
+        #  return {'token': s.dumps({'id': self.id})}
+
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except SignatureExpired:
+            return None
+        except BadSignature:
+            return None
+
+        return User.query.get(data['id'])
+
+    @staticmethod
+    def create(username='', email='', password=None):
+        """
+        Create a new user.
+
+        Args:
+            username(str): the name of user
+            email(str): the email of user
+            password(str): the password of user
+        """
+        if not username and not email:
+            return None
+
+        user = User.query.filter(
+            or_(email == email),
+            username == username
+        ).first()
+
+        if user is None:
+            user = User()
+            user.username = username
+            user.email = email
+            if password is not None:
+                user.set_password(password)
+
+            db.session.add(user)
             db.session.commit()
 
-
-class Role(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(255), unique=True)
-    description = db.Column(db.String(255))
-
-    def __init__(self, name):
-        self.name = name
-
-    def __repr__(self):
-        return '<Role {}>'.format(self.name)
-
-
-# 针对 Post 表和 Tag 表的多对多关系管理
-tags = db.Table(
-    'tags',
-    db.Column('post_id', db.Integer(), db.ForeignKey('post.id')),
-    db.Column('tag_id', db.Integer(), db.ForeignKey('tag.id'))
-)
+        return user
 
 
 class Post(db.Model):
@@ -105,6 +207,7 @@ class Post(db.Model):
     title = db.Column(db.String(255))
     text = db.Column(db.Text())
     publish_date = db.Column(db.DateTime())
+    update_date = db.Column(db.DateTime())
     comments = db.relationship('Comment', backref='post', lazy='dynamic')
     # 外键
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'))
@@ -121,23 +224,35 @@ class Post(db.Model):
     def __repr__(self):
         return r"<Post'{}'>".format(self.title)
 
-    def change(self, title, text=''):
+    def change(self, title, text='', *tags):
         """
         Chang the post data.
 
         Args:
             title(str): the title of the psot.
             Text(str): the content of the psot.
+            *tags: a set of tag.
         """
-        self.title = title
-        self.text = text
+        if title:
+            self.title = title
+        if text:
+            self.text = text
         self.publish_date = datetime.datetime.now()
-
+        self.tags.extend(*tags)
         db.session.add(self)
-        db.session.commit
+
+        # self.update(
+        # {
+        # 'title': title,
+        # 'text': text,
+        # 'update_date': datetime.datetime.now()
+        # }
+        # )
+
+        db.session.commit()
 
     @staticmethod
-    def create_post(title, text='', user_id=0, *tags):
+    def create(title, text='', user=None, *tags):
         """
         Create a new post to database.
 
@@ -145,16 +260,20 @@ class Post(db.Model):
             title(str): the title of the psot.
             Text(str): the content of the psot.
             user_id(int): the ID of user who the post belongs to.
-            *tag: a set of tag.
+            *tags: a set of tag.
         """
+        if not title:
+            return None
+
         new_post = Post(title)
         new_post.text = text
         new_post.publish_date = datetime.datetime.now()
-        new_post.user_id = user_id
-        for tag in tags:
-            new_post.tags.appen(tag)
+        new_post.user = user
+        #  new_post.user_id = user_id
+        new_post.tags.extend(*tags)
         db.session.add(new_post)
         db.session.commit()
+        return new_post
 
     @staticmethod
     def generate_fake_posts(num=100):
@@ -166,18 +285,15 @@ class Post(db.Model):
         """
         import random
         user = User.query.get(1)
-        tag_one = Tag('Python')
-        tag_two = Tag('Flask')
-        tag_three = Tag('SQLAlchemy')
-        tag_four = Tag('Jinja')
-        tag_list = [tag_one, tag_two, tag_three, tag_four]
+        tag_list = [Tag.create(tag)
+                    for tag in ('Python', 'Flask', 'SQLAlchemy', 'Jinja')]
 
         s = "Example text"
 
         for i in range(num):
             title = "Post " + str(i)
             tags = random.sample(tag_list, random.randint(1, 3))
-            Post.create_post(title, s, user.id, tags)
+            Post.create(title, s, user, tags)
 
 
 class Comment(db.Model):
@@ -190,13 +306,14 @@ class Comment(db.Model):
     text = db.Column(db.Text())
     date = db.Column(db.DateTime())
     # 外键
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'))
     post_id = db.Column(db.Integer(), db.ForeignKey('post.id'))
 
     def __repr__(self):
         return "<Comment '{}'>".format(self.text[:15])
 
     @staticmethod
-    def create_comment(name, text='', post_id=0):
+    def create(name, text='', post=None, user=None):
         """
         Create a new comment to the database.
 
@@ -208,22 +325,39 @@ class Comment(db.Model):
         new_comment = Comment()
         new_comment.name = name
         new_comment.text = text
-        new_comment.post_id = post_id
+        new_comment.post = post
+        new_comment.user = user
         new_comment.data = datetime.datetime.now()
         db.session.add(new_comment)
         db.session.commit()
+
+        return new_comment
 
 
 class Tag(db.Model):
     """ 标签表 """
     __tablename__ = 'tag'
 
-    # 主键
     id = db.Column(db.Integer(), primary_key=True)
-    title = db.Column(db.String(255))
+    name = db.Column(db.String(255), unique=True)
 
-    def __init__(self, title):
-        self.title = title
+    def __init__(self, name):
+        self.name = name
 
     def __repr__(self):
-        return "<Tag '{}'>".format(self.title)
+        return "<Tag '{}'>".format(self.name)
+
+    @staticmethod
+    def create(name):
+        tag = Tag.query.filter_by(name=name).first()
+        if tag is None:
+            tag = Tag(name=name)
+            db.session.add(tag)
+            db.session.commit()
+
+        return tag
+
+    @staticmethod
+    def create_tags(tag_list):
+        for t in tag_list:
+            Tag.create(t)

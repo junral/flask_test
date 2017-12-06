@@ -9,7 +9,7 @@ from flask import render_template, redirect, url_for, flash, abort
 from flask import g, session
 # from flask.views import View, MethodView
 from sqlalchemy import func
-from flask_login import login_required
+from flask_login import login_required, current_user
 from flask_principal import Permission, UserNeed
 
 from ..models import Post, Tag, Comment, User, tags
@@ -42,7 +42,7 @@ def home(page=1):
     # return '<h1>Hello World!</h1>'
     posts = Post.query.order_by(
         Post.publish_date.desc()
-    )  # .pagination(page, 10)
+    ).paginate(page, 10)
     recent, top_tags = sidebar_data()
 
     return render_template(
@@ -87,13 +87,13 @@ def user(username):
 @login_required
 def post(post_id):
     form = CommentForm()
+    post = Post.query.get_or_404(post_id)
 
     if form.validate_on_submit():
         name = form.name.data
-        text =  form.text.data
-        Comment.create_comment(name, text, post_id)
+        text = form.text.data
+        Comment.create(name, text, post, current_user)
 
-    post = Post.query.get_or_404(post_id)
     tags = post.tags
     comments = post.comments.order_by(Comment.date.desc()).all()
     recent, top_tags = sidebar_data()
@@ -121,9 +121,17 @@ def new_post():
     if form.validate_on_submit():
         title = form.title.data
         text = form.text.data
-        Post.create_post(title, text)
+        new_post = Post.create(title, text, current_user)
+        if new_post is None:
+            flash(
+                'The new post create unsuccess',
+                category='danger'
+            )
 
-    return render_template('blog/new.html', form=form)
+    return render_template(
+        'blog/new.html',
+        form=form
+    )
 
 
 @blog_blueprint.route('/edit/<int:id>', methods=['GET', 'POST'])
@@ -158,7 +166,7 @@ def edit_post(id):
 def before_request():
     """ 在所有请求处理之前运行 """
     #  if 'user_id' in session:
-        #  g.user = User.query.get(session['user_id'])
+    #  g.user = User.query.get(session['user_id'])
 
     if 'username' in session:
         g.user = User.query.get(session['usename']).one()
