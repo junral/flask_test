@@ -251,6 +251,10 @@ class Post(db.Model):
 
         db.session.commit()
 
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
     @staticmethod
     def create(title, text='', user=None, *tags):
         """
@@ -361,3 +365,14 @@ class Tag(db.Model):
     def create_tags(tag_list):
         for t in tag_list:
             Tag.create(t)
+
+
+# 创建提醒应用的相关模型：
+class Reminder(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    date = db.Column(db.DateTime())
+    email = db.Column(db.String())
+    text = db.Column(db.Text())
+
+    def __repr__(self):
+        return "<Reminder '{}'>".format(self.text[:20])

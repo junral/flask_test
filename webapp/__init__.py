@@ -4,13 +4,16 @@
 from flask import Flask
 from flask_login import current_user
 from flask_principal import identity_loaded, UserNeed, RoleNeed
+from sqlalchemy import event
 
 from .extensions import bootstrap, db, bcrypt, oid, login_manager, principals
-from .extensions import mongo, rest_api
-# from .extensions import oauth
+from .extensions import mongo, rest_api, celery
+#  from .extensions import oauth
 from .config import config
 from .controllers.rest.post import PostApi
 from .controllers.rest.auth import AuthApi
+from .models import Reminder
+from .tasks import on_reminder_save
 
 
 def create_app(object_name):
@@ -28,6 +31,11 @@ def create_app(object_name):
     login_manager.init_app(app)
     principals.init_app(app)
     mongo.init_app(app)
+    event.listen(
+        Reminder,
+        'after_insert',
+        on_reminder_save
+    )
     rest_api.add_resource(
         PostApi,
         '/api/post',
@@ -39,6 +47,7 @@ def create_app(object_name):
         '/api/auth'
     )
     rest_api.init_app(app)
+    celery.init_app(app)
 
     @identity_loaded.connect_via(app)
     def on_identity_loaded(sender, identity):

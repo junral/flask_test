@@ -2,6 +2,9 @@
 # encoding: utf-8
 
 import os
+import datetime
+
+from Celery import crontab
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -85,6 +88,28 @@ class DevConfig(Config):
         'db': 'local',
         'host': 'localhost',
         'port': 27017
+    }
+
+    # celery + redis 的配置
+    # the URL is in the format of:
+    # redis://:password@hostname:port/db_number
+    # CELERY_BACKEND_URL = 'redis://localhost:6379/0'
+    REDIS_URL = 'redis://localhost:6379/0'
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+    # 设定一个定期执行的任务
+    CELERY_SCHEDULE = {
+        # 每间隔30秒执行一次
+        'log-every-30-secondes': {
+            'task': 'webapp.tasks.log',
+            'schedule': datetime.timedelta(seconds=30),
+            'args': ("Message",)
+        },
+        'weekly-digest': {
+            'task': 'weebapp.task.digest',
+            'schedule': crontab(day_of_week=6, hour='10')
+        },
     }
 
 

@@ -7,7 +7,8 @@ from flask import abort
 from flask_restful import Resource, fields, marshal_with
 
 from .fields import HTMLField
-from .parsers import post_get_parser, post_post_parser, post_put_parser
+from .parsers import post_get_parser, post_post_parser, post_put_parser, \
+    Post_delete_parser
 
 from ...models import Post, Tag, User
 # from ...extensions import db
@@ -154,3 +155,21 @@ class PostApi(Resource):
             post.change(args['title'], args['text'], tags)
 
             return post.id, 201
+
+        def delete(self, post_id=None):
+            if not post_id:
+                abort(400)
+
+            post = Post.query.get(post_id)
+            if not post:
+                abort(404)
+
+            args = Post_delete_parser.parse_args(strice=True)
+            user = User.verify_auth_token(args['token'])
+            if user != post.user:
+                abort(403)
+
+            #  db.session.delete(post)
+            #  db.session.comit()
+            post.delete()
+            return '', 204

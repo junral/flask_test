@@ -11,6 +11,7 @@ from flask_login import LoginManager
 from flask_principal import Principal, Permission, RoleNeed
 from flask_mongoengine import MongoEngine
 from flask_restful import Api
+from flask_celery import Celery
 
 bootstrap = Bootstrap()
 db = SQLAlchemy()
@@ -21,6 +22,7 @@ login_manager = LoginManager()
 principals = Principal()
 mongo = MongoEngine()
 rest_api = Api()
+celery = Celery()
 
 role_list = ['default', 'poster', 'admin']
 admin_permission = Permission(RoleNeed('admin'))
