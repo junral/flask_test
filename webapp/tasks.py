@@ -2,13 +2,13 @@
 # encoding: utf-8
 
 import datetime
-import smtplib
 
-from flask import render_template
-from email.mime.text import MIMEText
+# from flask import render_template
+# from email.mime.text import MIMEText
 
 from .extensions import celery
 from .models import Reminder, Post
+from .email import send
 
 
 @celery.task()
@@ -29,25 +29,30 @@ def multiply(x, y):
 )
 def reminder(self, pk):
     reminder = Reminder.query.get(pk)
-    msg = MIMEText(reminder.text)
-    msg['Subject'] = 'your reminder'
-    msg['Form'] = 'junral@163.com'
-    msg['To'] = reminder.email
+    send(
+        reminder.email,
+        'Your reminder',
+        'reminder',
+        {'text': reminder.text}
+    )
+    #  msg = MIMEText(reminder.text)
+    #  msg['Subject'] = 'your reminder'
+    #  msg['Form'] = 'junral@163.com'
+    #  msg['To'] = reminder.email
 
-    try:
-        smtp_server = smtplib.SMTP('localhost')
-        smtp_server.starttls()
-        smtp_server.login('junral', 'wujunrong1994;')
-        smtp_server.sendmail(
-            'junral@163.com',
-            [reminder.email],
-            msg.as_string()
-        )
-        smtp_server.close()
-
-        return
-    except Exception as e:
-        self.retry(exc=e)
+    #  try:
+        #  smtp_server = smtplib.SMTP('localhost')
+        #  smtp_server.starttls()
+        #  smtp_server.login('junral', 'wujunrong1994;')
+        #  smtp_server.sendmail(
+            #  'junral@163.com',
+            #  [reminder.email],
+            #  msg.as_string()
+        #  )
+        #  smtp_server.close()
+        #  return
+    #  except Exception as e:
+        #  self.retry(exc=e)
 
 
 @celery.task(
@@ -74,29 +79,35 @@ def digest(self):
 
     if (len(posts) == 0):
         return
-
-    msg = MIMEText(
-        render_template("digest.html", posts=posts),
-        'html'
+    send(
+        reminder.emial,
+        '',
+        'digest',
+        {'posts': posts}
     )
 
-    msg['Subject'] = 'Weekly Digest'
-    msg['Form'] = ''
+    #  msg = MIMEText(
+        #  render_template("digest.html", posts=posts),
+        #  'html'
+    #  )
 
-    try:
-        smtp_server = smtplib.SMTP('localhost')
-        smtp_server.starttls()
-        smtp_server.login('junral', 'wujunrong1994;')
-        smtp_server.sendmail(
-            'junral@163.com',
-            [reminder.email],
-            msg.as_string()
-        )
-        smtp_server.close()
+    #  msg['Subject'] = 'Weekly Digest'
+    #  msg['Form'] = ''
 
-        return
-    except Exception as e:
-        self.retry(exc=e)
+    #  try:
+    #  smtp_server = smtplib.SMTP('localhost')
+    #  smtp_server.starttls()
+    #  smtp_server.login('junral', 'wujunrong1994;')
+    #  smtp_server.sendmail(
+        #  'junral@163.com',
+        #  [reminder.email],
+        #  msg.as_string()
+    #  )
+    #  smtp_server.close()
+        #  return
+    #  except Exception as e:
+        #  self.retry(exc=e)
+
 
 
 def on_reminder_save(mapper, connect, self):

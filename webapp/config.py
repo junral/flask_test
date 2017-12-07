@@ -4,7 +4,7 @@
 import os
 import datetime
 
-from Celery import crontab
+from celery.schedules import crontab
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -18,7 +18,22 @@ class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY', 'hard to guess string')
     RECAPTCHA_PUBLIC_KEY=""
     RECAPTCHA_PRIVATE_KEY=""
-    # pass
+    SSL_DISABLE = False
+    SQLALCHEMY_COMMIT_ON_TEARDOWN = True
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_RECORD_QUERIES = True
+    MAIL_SERVER = 'smtp.googlemail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_SUBJECT_PREFIX = '[Flasky]'
+    MAIL_SENDER = 'Flasky Admin <flasky@example.com>'
+    ADMIN = os.environ.get('FLASKY_ADMIN')
+    POSTS_PER_PAGE = 20
+    FOLLOWERS_PER_PAGE = 50
+    COMMENTS_PER_PAGE = 30
+    SLOW_DB_QUERY_TIME=0.5
 
     @staticmethod
     def init_app(app):
@@ -36,6 +51,21 @@ class ProdConfig(object):
     # Oracle
     # oracle+cx_oracle://user:password@ip:port/db_name
     # pass
+
+    # 将缓存存储在内存中
+    CACHE_TYPE = 'simple'
+
+    # 用redis作为缓存后端
+    #  CACHE_TYPE = 'redis'
+    #  CACHE_REDIS_HOST = 'localhost'
+    #  CACHE_REDIS_PORT = '6379'
+    #  CACHE_REDIS_PASSWORD = 'password'
+    #  CACHE_REDIS_DB = '0'
+
+    # 用memcached作为缓存后端的配置
+    #  CACHE_TYPE = 'memcached'
+    # CACHE_KEY_PREFIX = 'flask_cache'
+    # CACHE_MEMCACHED_SAVERS = ['localhost:11211']
 
     @classmethod
     def init_app(cls, app):
@@ -74,6 +104,21 @@ class TestConfig(Config):
 class DevConfig(Config):
     """ 开发环境配置 """
     DEBUG = True
+    # 使用MongoEngine 时需要进行配置
+    #  debug_tb_panels = [
+        #  'flask_debugtoolbar.panels.versions.VersionDebugPanel',
+        #  'flask_debugtoolbar.panels.timer.TimerDebugPanel',
+        #  'flask_debugtoolbar.panels.headers.HeaderDebugPanel',
+        #  'flask_debugtoolbar.panels.request_vars.RequestVarsDebugPanel',
+        #  'flask_debugtoolbar.panels.panels.config_vars.ConfigVarsDebugPanel',
+        #  'flask_debugtoolbar.panels.panels.template.TemplateDebugPanel',
+        #  'flask_debugtoolbar.panels.panels.logger.LoggingDebugPanel',
+        #  'flask_debugtoolbar.panels.panels.route_list.RouteListDebugPanel',
+        #  'flask_debugtoolbar.panels.panels.profiler.ProfilerDebugPanel',
+        #  'flask_mongoengine.panels.panels.MongoDebugPanel'
+    #  ]
+    DEBUG_TB_INTERCEPT_REDIRECTS = False
+    ASSETS_DEBUG = True
     # SQLite
     # DB_URI = 'sqlite:///database.db'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URI') or \
@@ -111,6 +156,14 @@ class DevConfig(Config):
             'schedule': crontab(day_of_week=6, hour='10')
         },
     }
+
+    # simple 选项会告诉 Flask Cache 把结果保存到内存中的一个 Python 字典里面
+    CACHE_TYPE = 'simple'
+    # CACHE_TYPE = 'null'
+    MAIL_SERVER = 'localhost'
+    MAIL_PORT = 25
+    MAIL_USERNAME = 'username'
+    MAIL_PASSWORD = 'password'
 
 
 config = {

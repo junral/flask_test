@@ -2,8 +2,15 @@
 # encoding: utf-8
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, PasswordField, SubmitField, SelectField
-from wtforms import BooleanField
+from wtforms import (
+    widgets,
+    StringField,
+    TextAreaField,
+    PasswordField,
+    SubmitField,
+    #  SelectField,
+    BooleanField
+)
 from wtforms.validators import Required, Length, EqualTo, Email, URL
 
 from .models import User
@@ -91,7 +98,17 @@ class OpenIDForm(FlaskForm):
     submit = SubmitField('Submit')
 
 
-def custom_email(form, field):
+class CKTextAreaWidget(widgets.TextArea):
+    def __call__(self, field, **kwargs):
+        kwargs.setdefault('class_', 'ckeditor')
+        return super(CKTextAreaWidget, self).__call__(field, **kwargs)
+
+
+class CKTextAreaField(TextAreaField):
+    widget = CKTextAreaWidget()
+
+
+def custom_email_checker(form, field):
     """ 自定义表单邮箱验证 """
     import re
     import wtforms

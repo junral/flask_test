@@ -10,8 +10,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from itsdangerous import BadSignature, SignatureExpired
 
-from .extensions import db
-#  from .extensions import bcrypt
+from .extensions import (
+    db,
+    #  bcrypt,
+    cache
+)
 
 
 # 针对 关系型数据库建立的模型
@@ -44,10 +47,11 @@ class Role(db.Model):
         return "<Role '{}'>".format(self.name)
 
     @staticmethod
-    def create_role(name):
+    def create_role(name, description=''):
         role = Role.query.filter_by(name=name).first()
         if role is None:
             role = Role(name=name)
+            role.description = description
             db.session.add(role)
             db.session.commit()
 
@@ -55,8 +59,14 @@ class Role(db.Model):
 
     @staticmethod
     def create_roles(role_list):
+        if role_list is None:
+            return
         for r in role_list:
-            Role.insert_role(r)
+            if isinstance(r, (tuple, list, set)):
+                n, d = r
+            else:
+                n, d = r, ''
+            Role.create_role(n, d)
 
 
 class User(db.Model):
@@ -91,7 +101,7 @@ class User(db.Model):
         super(User, self).__init__(**kwargs)
         default = Role.query.filter_by(name='default').first()
         if default is None:
-            default = Role.insert_role('default')
+            default = Role.create_role('default', 'default')
         self.roles.append(default)
 
     def __repr__(self):
@@ -105,7 +115,7 @@ class User(db.Model):
         # return bcrypt.check_password_hash(self.password, password)
         return check_password_hash(self.password, password)
 
-    def is_authenicated(self):
+    def is_authenticated(self):
         if isinstance(self, AnonymousUserMixin):
             return False
         else:
@@ -156,6 +166,8 @@ class User(db.Model):
         #  return {'token': s.dumps({'id': self.id})}
 
     @staticmethod
+    # 不但会存储函数的运行结果，也会存储调用的参数
+    @cache.memoize(60)
     def verify_auth_token(token):
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
@@ -168,7 +180,7 @@ class User(db.Model):
         return User.query.get(data['id'])
 
     @staticmethod
-    def create(username='', email='', password=None):
+    def create(username='', email='', password=None, roles=None):
         """
         Create a new user.
 
@@ -192,10 +204,29 @@ class User(db.Model):
             if password is not None:
                 user.set_password(password)
 
+            if roles is not None:
+                if isinstance(roles, (tuple, list, set)):
+                    for role in roles:
+                        if role not in user.roles:
+                            user.roles.append(role)
+                else:
+                    user.roles.append(roles)
+
             db.session.add(user)
             db.session.commit()
 
         return user
+
+
+class AnonymousUser(AnonymousUserMixin):
+    def can(self, permissions):
+        return False
+
+    def is_administrator(self):
+        return False
+
+    def is_authenticated(self):
+        return False
 
 
 class Post(db.Model):
@@ -256,7 +287,7 @@ class Post(db.Model):
         db.session.commit()
 
     @staticmethod
-    def create(title, text='', user=None, *tags):
+    def create(title, text='', user_id=0, *tags):
         """
         Create a new post to database.
 
@@ -272,8 +303,8 @@ class Post(db.Model):
         new_post = Post(title)
         new_post.text = text
         new_post.publish_date = datetime.datetime.now()
-        new_post.user = user
-        #  new_post.user_id = user_id
+        #  new_post.user = user
+        new_post.user_id = user_id
         new_post.tags.extend(*tags)
         db.session.add(new_post)
         db.session.commit()
@@ -297,7 +328,7 @@ class Post(db.Model):
         for i in range(num):
             title = "Post " + str(i)
             tags = random.sample(tag_list, random.randint(1, 3))
-            Post.create(title, s, user, tags)
+            Post.create(title, s, user.id, tags)
 
 
 class Comment(db.Model):
@@ -317,7 +348,7 @@ class Comment(db.Model):
         return "<Comment '{}'>".format(self.text[:15])
 
     @staticmethod
-    def create(name, text='', post=None, user=None):
+    def create(name, text='', post_id=0, user_id=0):
         """
         Create a new comment to the database.
 
@@ -329,8 +360,10 @@ class Comment(db.Model):
         new_comment = Comment()
         new_comment.name = name
         new_comment.text = text
-        new_comment.post = post
-        new_comment.user = user
+        #  new_comment.post = post
+        #  new_comment.user = user
+        new_comment.post_id = post_id
+        new_comment.user_id = user_id
         new_comment.data = datetime.datetime.now()
         db.session.add(new_comment)
         db.session.commit()

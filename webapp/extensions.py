@@ -12,6 +12,12 @@ from flask_principal import Principal, Permission, RoleNeed
 from flask_mongoengine import MongoEngine
 from flask_restful import Api
 from flask_celery import Celery
+from flask_debugtoolbar import DebugToolbarExtension
+from flask_cache import Cache
+from flask_assets import Environment, Bundle
+from flask_admin import Admin
+from flask_mail import Mail
+from flask_babel import Babel
 
 bootstrap = Bootstrap()
 db = SQLAlchemy()
@@ -23,8 +29,25 @@ principals = Principal()
 mongo = MongoEngine()
 rest_api = Api()
 celery = Celery()
+debug_toolbar = DebugToolbarExtension()
+cache = Cache()
+assets_env = Environment()
+main_css = Bundle(
+    'css/bootstrap.css',
+    filters='cssmin',
+    output='css/common.css'
+)
 
-role_list = ['default', 'poster', 'admin']
+main_js = Bundle(
+    'js/query.js',
+    'js/bootstrap.js',
+    filters='jsmin',
+    output='js/common.js'
+)
+admin = Admin()
+mail = Mail()
+babel = Babel()
+
 admin_permission = Permission(RoleNeed('admin'))
 poster_permission = Permission(RoleNeed('poster'))
 default_permission = Permission(RoleNeed('default'))
@@ -48,9 +71,3 @@ default_permission = Permission(RoleNeed('default'))
     # consumer_secret='',
     # request_token_params={'scope': 'email'}
 # )
-
-login_manager.login_view = 'main.login'
-# login_manager.login_view = 'main_mongo.login'
-login_manager.session_protection = 'strong'
-login_manager.login_message = 'Please login to access this page'
-login_manager.login_message_category = 'info'
