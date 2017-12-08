@@ -27,9 +27,9 @@ class Config(object):
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    MAIL_SUBJECT_PREFIX = '[Flasky]'
-    MAIL_SENDER = 'Flasky Admin <flasky@example.com>'
-    ADMIN = os.environ.get('FLASKY_ADMIN')
+    MAIL_SUBJECT_PREFIX = '[BLOG]'
+    MAIL_SENDER = 'BLOG Admin <flasky@example.com>'
+    ADMIN = os.environ.get('BLOG_ADMIN')
     POSTS_PER_PAGE = 20
     FOLLOWERS_PER_PAGE = 50
     COMMENTS_PER_PAGE = 30

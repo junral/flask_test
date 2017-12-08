@@ -6,8 +6,15 @@
 
 from flask import (
     Blueprint,
-    render_template, redirect, url_for, flash, abort,
-    g, session, request, current_app
+    render_template,
+    redirect,
+    url_for,
+    flash,
+    abort,
+    g,
+    session,
+    request,
+    current_app
 )
 # from flask.views import View, MethodView
 from sqlalchemy import func
@@ -17,7 +24,12 @@ from flask_principal import Permission, UserNeed
 from ..models import Post, Tag, Comment, User, tags
 from ..forms import CommentForm, PostForm
 from ..extensions import (
-    db, poster_permission, admin_permission, cache, babel
+    db,
+    poster_permission,
+    admin_permission,
+    cache,
+    babel,
+    youtube
 )
 
 blog_blueprint = Blueprint(

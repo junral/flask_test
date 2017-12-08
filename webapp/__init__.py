@@ -9,9 +9,24 @@ from flask_principal import identity_loaded, UserNeed, RoleNeed
 from sqlalchemy import event
 
 from .extensions import (
-    bootstrap, db, bcrypt, oid, login_manager, principals,
-    mongo, rest_api, celery, debug_toolbar, cache, assets_env,
-    main_js, main_css, admin, mail, babel
+    bootstrap,
+    db,
+    bcrypt,
+    oid,
+    login_manager,
+    principals,
+    mongo,
+    rest_api,
+    celery,
+    debug_toolbar,
+    cache,
+    assets_env,
+    main_js,
+    main_css,
+    admin,
+    mail,
+    # youtube_ext,
+    babel
 )
 #  from .extensions import oauth
 from .config import config
@@ -103,6 +118,7 @@ def create_app(object_name):
 
     mail.init_app(app)
     babel.init_app(app)
+    # youtube_ext.init_app(app)
 
     @identity_loaded.connect_via(app)
     def on_identity_loaded(sender, identity):
