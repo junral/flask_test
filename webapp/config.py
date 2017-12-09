@@ -3,6 +3,7 @@
 
 import os
 import datetime
+import tempfile
 
 from celery.schedules import crontab
 
@@ -22,18 +23,27 @@ class Config(object):
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_RECORD_QUERIES = True
+    # MAIL_SERVER = 'smtp.googlemail.com'
     MAIL_SERVER = 'smtp.googlemail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_SUBJECT_PREFIX = '[BLOG]'
-    MAIL_SENDER = 'BLOG Admin <flasky@example.com>'
+    MAIL_SENDER = 'BLOG Admin <junral@163.com>'
     ADMIN = os.environ.get('BLOG_ADMIN')
     POSTS_PER_PAGE = 20
     FOLLOWERS_PER_PAGE = 50
     COMMENTS_PER_PAGE = 30
     SLOW_DB_QUERY_TIME=0.5
+
+    # celery + redis 的配置
+    # the URL is in the format of:
+    # redis://:password@hostname:port/db_number
+    # CELERY_BACKEND_URL = 'redis://localhost:6379/0'
+    REDIS_URL = 'redis://localhost:6379/0'
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
     @staticmethod
     def init_app(app):
@@ -93,12 +103,14 @@ class ProdConfig(object):
 
 class TestConfig(Config):
     """ 测试环境配置 """
+    db_file = tempfile.NamedTemporaryFile()
     TESTING = True
     # SQLite
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URI') or \
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URI') or \
         'sqlite:///' + os.path.join(BASE_DIR, '../database.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     WTF_CSRF_ENABLED = False
+    CACHE_TYPE = 'null'
 
 
 class DevConfig(Config):
@@ -134,14 +146,6 @@ class DevConfig(Config):
         'host': 'localhost',
         'port': 27017
     }
-
-    # celery + redis 的配置
-    # the URL is in the format of:
-    # redis://:password@hostname:port/db_number
-    # CELERY_BACKEND_URL = 'redis://localhost:6379/0'
-    REDIS_URL = 'redis://localhost:6379/0'
-    CELERY_BROKER_URL = 'redis://localhost:6379/0'
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
     # 设定一个定期执行的任务
     CELERY_SCHEDULE = {

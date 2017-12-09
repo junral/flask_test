@@ -7,8 +7,32 @@ from flask import (
     url_for,
     session,
     render_template,
-    Blueprint, Markup
+    Blueprint,
+    Markup
 )
+
+
+class Youtube(object):
+    """
+    一个 YouTube 的 Flask 扩展。
+    """
+    def __init__(self, app=None, **kwargs):
+        if app:
+            self.init_app(app)
+
+    def init_app(self, app):
+        self.register_blueprint(app)
+        # 添加 HTML 模板
+        app.add_template_global(youtube)
+
+    def register_blueprint(self, app):
+        module = Blueprint(
+            'youtube',
+            __name__,
+            template_folder="templates"
+        )
+        app.register_blueprint(module)
+        return module
 
 
 class Video(object):
@@ -40,25 +64,3 @@ def youtube(*args, **kwargs):
 youtube_ext = Youtube()
 
 
-class Youtube(object):
-    """
-    一个 YouTube 的 Flask 扩展。
-    """
-    def __init__(self, app=None, **kwargs):
-        if app:
-            self.init_app(app)
-
-    def init_app(self, app):
-        self.register_blueprint(app)
-        # 添加 HTML 模板
-        app.add_template_global(youtube)
-
-    def register_blueprint(self, app):
-        from flask import Blueprint
-        module = Blueprint(
-            'youtube',
-            __name__,
-            template_folder="templates"
-        )
-        app.register_blueprint(module)
-        return module

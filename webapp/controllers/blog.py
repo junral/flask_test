@@ -29,7 +29,6 @@ from ..extensions import (
     admin_permission,
     cache,
     babel,
-    youtube
 )
 
 blog_blueprint = Blueprint(

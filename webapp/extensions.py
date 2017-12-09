@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+from gzip import GzipFile
+from io import BytesIO
+
 from flask import request, g, session, current_app
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
@@ -74,10 +77,6 @@ default_permission = Permission(RoleNeed('default'))
 
 
 class Gzip(object):
-
-    from flask import request
-    from gzip import GzipFile
-    from io import BytesIO
 
     def __init__(self, app=None):
         self.app = app

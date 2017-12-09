@@ -140,10 +140,10 @@ def create_app(object_name):
     from .controllers.auth import auth_blueprint
     app.register_blueprint(auth_blueprint)
 
-    from .controllers.blog_mongo import blog_mongo_blueprint
-    app.register_blueprint(blog_mongo_blueprint)
+    # from .controllers.blog_mongo import blog_mongo_blueprint
+    # app.register_blueprint(blog_mongo_blueprint)
 
-    from .controllers.auth_mongo import auth_mongo_blueprint
-    app.register_blueprint(auth_mongo_blueprint)
+    # from .controllers.auth_mongo import auth_mongo_blueprint
+    # app.register_blueprint(auth_mongo_blueprint)
 
     return app

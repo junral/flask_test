@@ -1,0 +1,53 @@
+1512753643470	geckodriver	INFO	geckodriver 0.19.0
+1512753643473	geckodriver	INFO	Listening on 127.0.0.1:48105
+1512753644585	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "-marionette" "-profile" "/tmp/rust_mozprofile.7C8dOe4KrQri"
+1512753645362	Marionette	INFO	Enabled via --marionette
+1512753646808	Marionette	INFO	Listening on port 34902
+1512753646911	Marionette	WARN	TLS certificate errors will be ignored for this session
+1512753646970	Marionette	DEBUG	Register listener.js for window 2147483649
+1512753681161	Marionette	DEBUG	Received DOM event "beforeunload" for "about:blank"
+1512753681611	Marionette	DEBUG	Received DOM event "pagehide" for "about:blank"
+1512753681611	Marionette	DEBUG	Received DOM event "unload" for "about:blank"
+JavaScript error: https://ss1.bdstatic.com/5eN1bjq8AAUYm2zgoY3K/r/www/cache/static/protocol/https/plugins/every_cookie_4644b13.js, line 4: ReferenceError: c is not defined
+1512753686934	Marionette	DEBUG	Received DOM event "DOMContentLoaded" for "https://www.baidu.com/"
+1512753687205	Marionette	DEBUG	Received DOM event "pageshow" for "https://www.baidu.com/"
+
+(firefox:12256): Gtk-CRITICAL **: gtk_window_resize: assertion 'height > 0' failed
+JavaScript error: https://sp0.baidu.com/5a1Fazu8AA54nxGko9WTAnF6hhy/su?wd=f&json=1&p=3&sid=1446_21103_17001_25177_20929&csor=1&cb=jQuery110206756439648722208_1512753686810&_=1512753686813, line 1: TypeError: jQuery110206756439648722208_1512753686810 is not a function
+JavaScript error: https://sp0.baidu.com/5a1Fazu8AA54nxGko9WTAnF6hhy/su?wd=fla&json=1&p=3&sid=1446_21103_17001_25177_20929&csor=3&pwd=fl&cb=jQuery110206756439648722208_1512753686810&_=1512753686815, line 1: TypeError: jQuery110206756439648722208_1512753686810 is not a function
+JavaScript error: https://sp0.baidu.com/5a1Fazu8AA54nxGko9WTAnF6hhy/su?wd=fl&json=1&p=3&sid=1446_21103_17001_25177_20929&csor=2&pwd=f&cb=jQuery110206756439648722208_1512753686810&_=1512753686814, line 1: TypeError: jQuery110206756439648722208_1512753686810 is not a function
+1512754771236	Marionette	DEBUG	Canceled page load listener because no navigation has been detected
+1512755762004	Marionette	DEBUG	Register listener.js for window 2147483653
+1512755762303	Marionette	DEBUG	Register listener.js for window 4294967297
+1512755802214	Marionette	DEBUG	Register listener.js for window 4294967301
+1512755816597	Marionette	DEBUG	Register listener.js for window 4294967305
+1512755828346	Marionette	DEBUG	Register listener.js for window 6442450945
+JavaScript error: resource://devtools/shared/base-loader.js -> resource://devtools/server/actors/highlighters/auto-refresh.js, line 201: TypeError: this.win is null
+IPDL protocol error: Handler returned error code!
+
+###!!! [Parent][DispatchAsyncMessage] Error: PLayerTransaction::Msg_ReleaseLayer Processing error: message was deserialized, but the handler returned false (indicating failure)
+
+IPDL protocol error: Handler returned error code!
+
+###!!! [Parent][DispatchAsyncMessage] Error: PLayerTransaction::Msg_ReleaseLayer Processing error: message was deserialized, but the handler returned false (indicating failure)
+
+IPDL protocol error: Handler returned error code!
+
+###!!! [Parent][DispatchAsyncMessage] Error: PLayerTransaction::Msg_ReleaseLayer Processing error: message was deserialized, but the handler returned false (indicating failure)
+
+IPDL protocol error: Handler returned error code!
+
+###!!! [Parent][DispatchAsyncMessage] Error: PLayerTransaction::Msg_ReleaseLayer Processing error: message was deserialized, but the handler returned false (indicating failure)
+
+IPDL protocol error: Handler returned error code!
+
+###!!! [Parent][DispatchAsyncMessage] Error: PLayerTransaction::Msg_ReleaseLayer Processing error: message was deserialized, but the handler returned false (indicating failure)
+
+IPDL protocol error: Handler returned error code!
+
+###!!! [Parent][DispatchAsyncMessage] Error: PLayerTransaction::Msg_ReleaseLayer Processing error: message was deserialized, but the handler returned false (indicating failure)
+
+IPDL protocol error: Handler returned error code!
+
+###!!! [Parent][DispatchAsyncMessage] Error: PLayerTransaction::Msg_ReleaseLayer Processing error: message was deserialized, but the handler returned false (indicating failure)
+

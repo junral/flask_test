@@ -188,7 +188,10 @@ class User(db.Model):
             username(str): the name of user
             email(str): the email of user
             password(str): the password of user
+            roles(set): the set of user role
         """
+        from sqlalchemy.exc import IntegrityError
+
         if not username and not email:
             return None
 
@@ -213,9 +216,31 @@ class User(db.Model):
                     user.roles.append(roles)
 
             db.session.add(user)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                return None
 
         return user
+
+    @staticmethod
+    def generate_fake_users(count=100):
+        from random import seed
+        import forgery_py
+
+        seed()
+        for i in range(count):
+            User.create(
+                email=forgery_py.internet.email_address(),
+                username=forgery_py.internet.user_name(True),
+                # confirmed=True,
+                # name=forgery_py.name.full_name(),
+                # location=forgery_py.address.city(),
+                # about_me=forgery_py.lorem_ipsum.sentence(),
+                # member_since=forgery_py.date.date(True)
+                password=forgery_py.lorem_ipsum.word(),
+            )
 
 
 class AnonymousUser(AnonymousUserMixin):
@@ -297,6 +322,7 @@ class Post(db.Model):
             user_id(int): the ID of user who the post belongs to.
             *tags: a set of tag.
         """
+        from sqlalchemy.exc import IntegrityError
         if not title:
             return None
 
@@ -307,7 +333,12 @@ class Post(db.Model):
         new_post.user_id = user_id
         new_post.tags.extend(*tags)
         db.session.add(new_post)
-        db.session.commit()
+
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return None
         return new_post
 
     @staticmethod
