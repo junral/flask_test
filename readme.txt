@@ -47,7 +47,7 @@ apt-get -y install supervisor
     Apache httpd 和 Nginx 的配置过程基本相同。
 
 
-将代码部署在 Heroku 服务器上：
+将应用部署在 Heroku 服务器上：
 Heroku 通过读取名为 Profile 的配置文件来运行服务，文件中包含一些命令，
 并交给 Heroku 的容器（Heroku dyno 为服务器上运行的某种虚拟机）来执行
 
@@ -64,3 +64,35 @@ git push heroku master
 
 打开一个标签页来查看网站
 heroku open
+
+使用下面的命令安装 Heroku RabbitMQ 插件，选择免费套餐（叫作 lemur 套餐）：
+heroku addons:create cloudamgqp:lemur
+
+将应用部署到 AWS 服务器上：
+登录地址：http://aws.amazon.ocm/elasticbenstalk
+Elastic Beanstalk 是一个 Web 应用托管平台，为开发者提供了众多强大的特性，而开发者
+无需担心任务服务器维护的问题。
+在 Benstalk 使用 Apache 结合 mod_wsgi 连接 WSGI 应用。
+在初始化的时候可以安装 ELastic Beanstalk 的命令行工具。这些工具能自动部署应用的新版本。
+使用 pip 进行安装：
+pip install awsebcli
+
+配置命令行工具，在项目目录下运行下面的命令：
+eb init
+
+下面的命令可以查看在应用实例上运行了什么：
+eb open
+
+通过下面的命令部署应用：
+eb deploy
+
+在 Amazon Simple Queue Service 中使用 Celery：
+为了使用 Celery，我们需要让 Elastic Beanstalk 实力在后台运行 Celery 工作进程，
+还需要创建一个 Simple Queue Service（SQS）上的消息队列。需要安装一个帮助程序：
+pip instal boto
+
+然后需要把 CELERY_BROKER_URL 和 CELERY_backend_url 换成新的 URL，它会是下面这种形式：
+sqs://aws_access_key_id:aws_secret_acces_key@
+
+告诉 ELastic Beanstalk 在后台运行一个 Celery 工作进程。需要在项目根目录下创建一个
+新的 .ebextensions 目录，然后在这个目录中放一个 .conf 文件。通过这个文具店，我们可以执行任意命令。
